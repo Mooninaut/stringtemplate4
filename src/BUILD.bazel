@@ -14,6 +14,7 @@ java_library(
     ],
     resources = glob(["**/*.jfd"]),
     deps = ["@antlr3//:java_runtime"],
+    javacopts = ["-source", "1.7", "-target", "1.7"]
 )
 
 genrule(
