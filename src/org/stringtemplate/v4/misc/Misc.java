@@ -30,9 +30,11 @@ package org.stringtemplate.v4.misc;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.Iterator;
+import java.nio.file.Paths;
+import java.util.*;
 
 public class Misc {
     public static final String newline = System.getProperty("line.separator");
@@ -86,14 +88,6 @@ public class Misc {
         return s;
     }
 
-    public static String trimOneStarting(String s, String trim) {
-        return s.startsWith(trim) ? s.substring(trim.length()) : s;
-    }
-
-    public static String trimOneTrailing(String s, String trim) {
-        return s.endsWith(trim) ? stripRight(s, trim.length()) : s;
-    }
-
     /** Given, say, {@code file:/tmp/test.jar!/org/foo/templates/main.stg}
      *  convert to {@code file:/tmp/test.jar!/org/foo/templates}
      */
@@ -125,13 +119,17 @@ public class Misc {
         return "";
     }
 
-    /**
-     * Trims one trailing "/" from path1 and one initial "/" from path2 before
-     * joining them with one "/".
-     */
-    public static String joinPathSegments(String path1, String path2) {
-        return trimOneTrailing(path1, "/") + "/" +
-               trimOneStarting(path2, "/");
+    public static URL appendPath(URL url, String path) throws MalformedURLException {
+        // Remove "jar:" protocol if present
+        if ("jar".equalsIgnoreCase(url.getProtocol())) {
+            url = new URL(url.getFile());
+        }
+
+        // Remove "file:" protocol leaving file path
+        return Paths.get(url.getFile(), path)
+            .normalize()
+            .toUri()
+            .toURL();
     }
 
     public static String getPrefix(String name) {

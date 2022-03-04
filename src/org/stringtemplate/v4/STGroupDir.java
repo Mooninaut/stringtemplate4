@@ -124,42 +124,25 @@ public class STGroupDir extends STGroup {
 //          // no need to check for a group file as name has no parent
 //            return loadTemplateFile("/", name+TEMPLATE_FILE_EXTENSION); // load t.st file
 //      }
-
-        String groupFileString = Misc.joinPathSegments(root.toString(), parent) + GROUP_FILE_EXTENSION;
-
-        URL groupFileURL;
-        try { // see if parent of template name is a group file
-            groupFileURL = new URI(groupFileString).normalize().toURL();
+        URL groupFileURL = root;
+        // see if parent of template name is a group file
+        try {
+            groupFileURL = Misc.appendPath(groupFileURL, parent+GROUP_FILE_EXTENSION);
         }
         catch (MalformedURLException e) {
-            badURLError(groupFileString, e);
-            return null;
-        }
-        catch (URISyntaxException e) {
-            badURLError(groupFileString, e);
+            badURLError(groupFileURL+"/"+parent+GROUP_FILE_EXTENSION, e);
             return null;
         }
 
-        InputStream is = null;
-        try {
-            is = groupFileURL.openStream();
+        try (InputStream ignored = groupFileURL.openStream()) {
+            loadGroupFile(prefix, groupFileURL.toString());
+            return rawGetTemplate(name);
         }
         catch (IOException ioe) {
             // must not be in a group file
             String unqualifiedName = Misc.getFileName(name);
             return loadTemplateFile(prefix, unqualifiedName+TEMPLATE_FILE_EXTENSION); // load t.st file
         }
-        finally { // clean up
-            try {
-                if (is!=null) is.close();
-            }
-            catch (IOException ioe) {
-                errMgr.internalError(null, "can't close template file stream "+name, ioe);
-            }
-        }
-
-        loadGroupFile(prefix, groupFileString);
-        return rawGetTemplate(name);
     }
 
     private void badURLError(String fullPath, Exception e) {
@@ -174,11 +157,7 @@ public class STGroupDir extends STGroup {
         try {
             f = new URI(root+prefix+unqualifiedFileName).normalize().toURL();
         }
-        catch (MalformedURLException e) {
-            invalidTemplateError(unqualifiedFileName, e);
-            return null;
-        }
-        catch (URISyntaxException e) {
+        catch (MalformedURLException | URISyntaxException e) {
             invalidTemplateError(unqualifiedFileName, e);
             return null;
         }
